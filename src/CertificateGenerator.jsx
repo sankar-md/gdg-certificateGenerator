@@ -5,11 +5,10 @@ import { Button } from "./components/ui/button";
 import { Label } from "./components/ui/label";
 import html2pdf from "html2pdf.js";
 
-import fakeData from "./fakeData.json"; // Sample data
-
 export default function CertificateGenerator() {
   const [eventName, setEventName] = useState("");
   const [eventType, setEventType] = useState("");
+  const [userData, setUserData] = useState([]);
   const certificateRefs = useRef([]);
 
   const handleEventNameChange = (e) => {
@@ -20,12 +19,31 @@ export default function CertificateGenerator() {
     setEventType(e.target.value);
   };
 
+  const handleFileUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+          const data = JSON.parse(event.target.result);
+          setUserData(data);
+        } catch (error) {
+          console.log(error);
+        }
+      };
+      reader.readAsText(file);
+    }
+  };
+
   const downloadCertificates = () => {
+    if (!eventName || !eventType || userData.length === 0) {
+      return;
+    }
     certificateRefs.current.forEach((certificateElement, index) => {
       if (certificateElement) {
         const options = {
           margin: 0,
-          filename: `${fakeData[index].name}-gdg-certificate.pdf`,
+          filename: `${userData[index].name}-gdg-certificate.pdf`,
           jsPDF: {
             unit: "mm",
             format: "a4",
@@ -50,7 +68,7 @@ export default function CertificateGenerator() {
         </marquee>
         <h2 className="text-2xl font-bold mb-4">GDG Event Information</h2>
         <div className="max-w-md mb-4">
-          <Label htmlFor="eventType">What is Event</Label>
+          <Label htmlFor="eventType">EVENT NAME</Label>
           <Input
             id="eventType"
             value={eventType}
@@ -58,7 +76,7 @@ export default function CertificateGenerator() {
             placeholder="Enter event type (e.g., Tech Winter Break)"
             className="mb-2"
           />
-          <Label htmlFor="eventName">Event Name</Label>
+          <Label htmlFor="eventName">EVENT TYPE</Label>
           <Input
             id="eventName"
             value={eventName}
@@ -67,13 +85,27 @@ export default function CertificateGenerator() {
             className="mb-2"
           />
         </div>
+
+        {/* File upload for user data */}
+        <div className="max-w-md mb-4">
+          <Label htmlFor="fileUpload">Upload Participant Data</Label>
+          <Input
+            id="fileUpload"
+            type="file"
+            onChange={handleFileUpload}
+            accept=".json"
+            className="mb-2"
+          />
+        </div>
+
         <Button onClick={downloadCertificates} className="mb-8">
           Download All Certificates
         </Button>
       </div>
+
       {/* Display a preview of the certificates */}
       <div className="space-y-8 overflow-x-hidden flex flex-col items-center max-w-full pb-8">
-        {fakeData.map((candidate, index) => (
+        {userData.map((candidate, index) => (
           <div key={index} className="flex items-center justify-center">
             <Card className="w-full max-w-[297mm] max-h-[210mm] bg-white shadow-none rounded-none overflow-hidden">
               <div
@@ -116,18 +148,11 @@ export default function CertificateGenerator() {
                     </g>
                   </svg>
                 </div>
+
                 {/* Certificate Content */}
                 <div className="relative z-10 flex flex-col items-center justify-between h-full text-center">
                   {/* Header */}
                   <div className="w-full pt-8">
-                    <div className="flex justify-center items-center space-x-2">
-                      <div className="flex items-center gap-2 mb-4">
-                        <div className="w-3 h-3 rounded-full bg-blue-500" />
-                        <div className="w-3 h-3 rounded-full bg-red-500" />
-                        <div className="w-3 h-3 rounded-full bg-yellow-500" />
-                        <div className="w-3 h-3 rounded-full bg-green-500" />
-                      </div>
-                    </div>
                     <h1 className="text-5xl font-bold text-gray-800">
                       Google Developer Groups
                     </h1>
@@ -143,7 +168,7 @@ export default function CertificateGenerator() {
                         {eventType}
                       </p>
                     )}
-                    <p className="text-xl text-gray-600 mt -2 mb-2">
+                    <p className="text-xl text-gray-600 mt-2 mb-2">
                       Certificate of Achievement
                     </p>
                   </div>
@@ -156,7 +181,7 @@ export default function CertificateGenerator() {
                     <h2 className="text-5xl font-bold text-gray-900 mb-4">
                       {candidate.name}
                     </h2>
-                    <div className="w-[500px] h-px bg-gray-300  mx-auto mt-2"></div>
+                    <div className="w-[500px] h-px bg-gray-300 mx-auto mt-2"></div>
                     <p className="text-2xl text-gray-700 mb-2 mt-2">
                       has successfully participated in
                     </p>
